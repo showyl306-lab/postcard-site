@@ -6,11 +6,7 @@
   <title>Postcard</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       height: 100vh;
@@ -25,38 +21,99 @@
     .stage {
       width: 100%;
       height: 100%;
-      max-width: 420px; /* 모바일 기준 */
+      max-width: 420px;
       background: #f5f5f5;
       display: flex;
       justify-content: center;
       align-items: center;
+      position: relative;
+      overflow: hidden;
     }
 
     .card {
       width: 90%;
       height: 80%;
-      background: white;
+      background: #fff;
       border-radius: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      touch-action: pan-y;
+      position: absolute;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      will-change: transform;
     }
 
     .card img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      pointer-events: none;
+      user-select: none;
     }
   </style>
 </head>
 
 <body>
   <div class="stage">
-    <div class="card">
-      <img src="https://picsum.photos/800/1200" alt="postcard">
+    <div class="card" id="card">
+      <img id="cardImage" src="" alt="postcard">
     </div>
   </div>
+
+  <script>
+    const images = [
+      "https://picsum.photos/800/1200?1",
+      "https://picsum.photos/800/1200?2",
+      "https://picsum.photos/800/1200?3",
+      "https://picsum.photos/800/1200?4"
+    ];
+
+    let index = 0;
+    const card = document.getElementById("card");
+    const img = document.getElementById("cardImage");
+
+    img.src = images[index];
+
+    let startX = 0;
+    let currentX = 0;
+    let dragging = false;
+
+    const threshold = 80; // 넘김 기준(px)
+
+    card.addEventListener("touchstart", e => {
+      dragging = true;
+      startX = e.touches[0].clientX;
+      card.style.transition = "none";
+    });
+
+    card.addEventListener("touchmove", e => {
+      if (!dragging) return;
+      currentX = e.touches[0].clientX - startX;
+      card.style.transform = `translateX(${currentX}px) rotate(${currentX * 0.05}deg)`;
+    });
+
+    card.addEventListener("touchend", () => {
+      dragging = false;
+      card.style.transition = "transform 0.25s ease, opacity 0.25s ease";
+
+      if (Math.abs(currentX) > threshold) {
+        const dir = currentX > 0 ? 1 : -1;
+        card.style.transform = `translateX(${dir * 120}%) rotate(${dir * 15}deg)`;
+        card.style.opacity = "0";
+
+        setTimeout(() => {
+          index = (index + 1) % images.length;
+          img.src = images[index];
+          card.style.transition = "none";
+          card.style.transform = "translateX(0) rotate(0)";
+          card.style.opacity = "1";
+        }, 250);
+      } else {
+        card.style.transform = "translateX(0) rotate(0)";
+      }
+
+      currentX = 0;
+    });
+  </script>
 </body>
 </html>
