@@ -1,327 +1,221 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Postcard</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Postcard</title>
 
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
 
-    body {
-      height: 100vh;
-      overflow: hidden;
-      background: #eaeaea;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+body {
+  height:100vh;
+  background:#eaeaea;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+  overflow:hidden;
+}
 
-    .stage {
-      width: 100%;
-      height: 100%;
-      max-width: 420px;
-      background: #f5f5f5;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
+.stage {
+  width:100%;
+  height:100%;
+  max-width:420px;
+  background:#f5f5f5;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+}
 
-    /* 상단 타이틀 영역 */
-    .topbar {
-      height: 56px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 14px;
-      background: rgba(255,255,255,0.8);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(0,0,0,0.06);
-      flex: 0 0 auto;
-    }
+.topbar {
+  height:52px;
+  padding:0 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  border-bottom:1px solid rgba(0,0,0,0.05);
+}
 
-    .title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #111;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 70%;
-    }
+.topbar span {
+  font-weight:800;
+  font-size:14px;
+  letter-spacing:1px;
+}
 
-    .btn {
-      border: 0;
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-weight: 700;
-      background: #111;
-      color: #fff;
-      cursor: pointer;
-    }
+.btn {
+  background:#111;
+  color:#fff;
+  border:0;
+  border-radius:999px;
+  padding:8px 12px;
+  font-weight:700;
+  cursor:pointer;
+}
 
-    .content {
-      flex: 1 1 auto;
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 18px 0;
-    }
+.content {
+  flex:1;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  position:relative;
+}
 
-    /* 뒤 카드(스택 느낌) */
-    .ghost {
-      width: 90%;
-      height: calc(100% - 36px);
-      max-height: 82%;
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 10px 26px rgba(0,0,0,0.10);
-      position: absolute;
-      transform: translateY(10px) scale(0.985);
-      opacity: 0.9;
-    }
+.stack {
+  position:absolute;
+  width:90%;
+  height:82%;
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 8px 20px rgba(0,0,0,.1);
+  transform:translateY(14px) scale(.97);
+}
 
-    .ghost2 {
-      transform: translateY(18px) scale(0.97);
-      opacity: 0.75;
-      box-shadow: 0 10px 26px rgba(0,0,0,0.08);
-    }
+.stack.back {
+  transform:translateY(26px) scale(.94);
+  opacity:.6;
+}
 
-    /* 메인 카드 */
-    .card {
-      width: 90%;
-      height: calc(100% - 36px);
-      max-height: 82%;
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 14px 34px rgba(0,0,0,0.18);
-      overflow: hidden;
-      touch-action: pan-y;
-      position: relative;
-      transition: transform 0.22s ease, opacity 0.22s ease;
-      will-change: transform;
-    }
+.card {
+  width:90%;
+  height:82%;
+  background:#fff;
+  border-radius:16px;
+  box-shadow:0 18px 40px rgba(0,0,0,.18);
+  overflow:hidden;
+  position:absolute;
+  touch-action:pan-y;
+  transition:transform .28s cubic-bezier(.2,.8,.2,1), opacity .28s;
+}
 
-    .card img, .card video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      pointer-events: none;
-      user-select: none;
-      display: block;
-    }
+.card img, .card video {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  pointer-events:none;
+}
 
-    /* 진행 표시(점) */
-    .dots {
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 6px;
-      background: rgba(0,0,0,0.18);
-      padding: 6px 10px;
-      border-radius: 999px;
-      backdrop-filter: blur(8px);
-    }
-    .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.45);
-    }
-    .dot.active {
-      background: rgba(255,255,255,0.95);
-    }
+.end {
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:16px;
+  height:100%;
+  font-weight:700;
+}
 
-    /* 하단 힌트 */
-    .hint {
-      position: absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 12px;
-      font-weight: 700;
-      color: rgba(0,0,0,0.55);
-      background: rgba(255,255,255,0.75);
-      padding: 6px 10px;
-      border-radius: 999px;
-      backdrop-filter: blur(8px);
-    }
-  </style>
+.end button {
+  padding:12px 20px;
+  border-radius:12px;
+  border:0;
+  background:#111;
+  color:#fff;
+  font-weight:800;
+}
+</style>
 </head>
 
 <body>
-  <div class="stage">
-    <div class="topbar">
-      <div class="title" id="titleText">Welcome</div>
-      <button class="btn" id="bgmBtn">🔊 BGM 켜기</button>
-    </div>
+<div class="stage">
 
-    <div class="content">
-      <div class="ghost ghost2"></div>
-      <div class="ghost"></div>
-
-      <div class="card" id="card">
-        <!-- JS에서 intro(video) 또는 img를 주입 -->
-      </div>
-
-      <div class="hint" id="hint">좌/우로 밀어서 넘기기</div>
-      <div class="dots" id="dots"></div>
-    </div>
+  <div class="topbar">
+    <span>POSTCARD</span>
+    <button class="btn" id="bgmBtn">🔊</button>
   </div>
 
-  <audio id="bgm" src="audio/bgm.mp3" loop preload="auto"></audio>
+  <div class="content">
+    <div class="stack back"></div>
+    <div class="stack"></div>
+    <div class="card" id="card"></div>
+  </div>
+</div>
 
-  <script>
-    // 0번: intro video, 1~13번: 사진
-    const items = [
-      { type: "video", src: "media/intro.mp4", title: "Intro" },
-      { type: "img",   src: "images/photo1.jpg",  title: "Postcard 1"  },
-      { type: "img",   src: "images/photo2.jpg",  title: "Postcard 2"  },
-      { type: "img",   src: "images/photo3.jpg",  title: "Postcard 3"  },
-      { type: "img",   src: "images/photo4.jpg",  title: "Postcard 4"  },
-      { type: "img",   src: "images/photo5.jpg",  title: "Postcard 5"  },
-      { type: "img",   src: "images/photo6.jpg",  title: "Postcard 6"  },
-      { type: "img",   src: "images/photo7.jpg",  title: "Postcard 7"  },
-      { type: "img",   src: "images/photo8.jpg",  title: "Postcard 8"  },
-      { type: "img",   src: "images/photo9.jpg",  title: "Postcard 9"  },
-      { type: "img",   src: "images/photo10.jpg", title: "Postcard 10" },
-      { type: "img",   src: "images/photo11.jpg", title: "Postcard 11" },
-      { type: "img",   src: "images/photo12.jpg", title: "Postcard 12" },
-      { type: "img",   src: "images/photo13.jpg", title: "Postcard 13" }
-    ];
+<audio id="bgm" src="audio/bgm.mp3" loop></audio>
 
-    let index = 0;
-    const card = document.getElementById("card");
-    const titleText = document.getElementById("titleText");
-    const dots = document.getElementById("dots");
-    const hint = document.getElementById("hint");
+<script>
+const items = [
+  { type:"video", src:"media/intro.mp4" },
+  ...Array.from({length:13},(_,i)=>({ type:"image", src:`images/photo${i+1}.jpg` })),
+  { type:"end" }
+];
 
-    // BGM
-    const bgm = document.getElementById("bgm");
-    const bgmBtn = document.getElementById("bgmBtn");
-    let bgmOn = false;
+let index = 0;
+const card = document.getElementById("card");
+const bgm = document.getElementById("bgm");
+const bgmBtn = document.getElementById("bgmBtn");
+let bgmOn=false;
 
-    bgmBtn.addEventListener("click", async () => {
-      try {
-        if (!bgmOn) {
-          await bgm.play();      // 모바일 정책상 유저 액션 필요
-          bgmOn = true;
-          bgmBtn.textContent = "🔇 BGM 끄기";
-        } else {
-          bgm.pause();
-          bgmOn = false;
-          bgmBtn.textContent = "🔊 BGM 켜기";
-        }
-      } catch (e) {
-        // 재생 실패 시(정책/파일 없음) -> 무시
-        alert("BGM 재생이 차단되었거나 파일이 없습니다. audio/bgm.mp3 업로드를 확인하세요.");
-      }
-    });
+bgmBtn.onclick=async()=>{
+  if(!bgmOn){ await bgm.play(); bgmOn=true; bgmBtn.textContent="🔇"; }
+  else{ bgm.pause(); bgmOn=false; bgmBtn.textContent="🔊"; }
+};
 
-    function renderDots() {
-      dots.innerHTML = "";
-      for (let i = 0; i < items.length; i++) {
-        const d = document.createElement("div");
-        d.className = "dot" + (i === index ? " active" : "");
-        dots.appendChild(d);
-      }
-    }
+function render(){
+  card.innerHTML="";
+  const item=items[index];
 
-    function renderCard() {
-      const item = items[index];
-      titleText.textContent = item.title;
+  if(item.type==="video"){
+    const v=document.createElement("video");
+    Object.assign(v,{src:item.src,autoplay:true,muted:true,playsInline:true});
+    card.appendChild(v);
+  }
+  else if(item.type==="image"){
+    const img=document.createElement("img");
+    img.src=item.src;
+    card.appendChild(img);
+  }
+  else{
+    const end=document.createElement("div");
+    end.className="end";
+    end.innerHTML=`
+      <div>끝</div>
+      <button onclick="location.reload()">처음으로</button>
+    `;
+    card.appendChild(end);
+  }
+}
 
-      // 첫 진입 힌트는 2초 후 자동 숨김(심심함 완화)
-      hint.style.opacity = "1";
-      clearTimeout(renderCard._t);
-      renderCard._t = setTimeout(() => hint.style.opacity = "0", 2000);
+render();
 
-      card.innerHTML = "";
+let sx=0, dx=0, dragging=false;
+const threshold=70;
 
-      if (item.type === "video") {
-        const v = document.createElement("video");
-        v.src = item.src;
-        v.autoplay = true;
-        v.muted = true;        // 자동재생 핵심
-        v.playsInline = true;  // iOS
-        v.loop = false;
-        v.preload = "auto";
-        card.appendChild(v);
-      } else {
-        const im = document.createElement("img");
-        im.src = item.src;
-        im.alt = "postcard";
-        card.appendChild(im);
-      }
+card.addEventListener("touchstart",e=>{
+  dragging=true;
+  sx=e.touches[0].clientX;
+  card.style.transition="none";
+});
 
-      renderDots();
-    }
+card.addEventListener("touchmove",e=>{
+  if(!dragging)return;
+  dx=e.touches[0].clientX-sx;
+  card.style.transform=`translateX(${dx}px) rotate(${dx*.04}deg)`;
+});
 
-    renderCard();
+card.addEventListener("touchend",()=>{
+  dragging=false;
+  card.style.transition="transform .28s, opacity .28s";
 
-    // Drag/Swipe
-    let startX = 0;
-    let currentX = 0;
-    let dragging = false;
-    const threshold = 70;
+  if(Math.abs(dx)>threshold){
+    const dir=dx>0?1:-1;
+    card.style.transform=`translateX(${dir*140}%) rotate(${dir*18}deg)`;
+    card.style.opacity=0;
 
-    function setCardTransform(dx) {
-      const rotate = dx * 0.06;
-      card.style.transform = `translateX(${dx}px) rotate(${rotate}deg)`;
-    }
-
-    card.addEventListener("touchstart", (e) => {
-      dragging = true;
-      startX = e.touches[0].clientX;
-      currentX = 0;
-      card.style.transition = "none";
-    });
-
-    card.addEventListener("touchmove", (e) => {
-      if (!dragging) return;
-      currentX = e.touches[0].clientX - startX;
-      setCardTransform(currentX);
-    });
-
-    card.addEventListener("touchend", () => {
-      dragging = false;
-      card.style.transition = "transform 0.22s ease, opacity 0.22s ease";
-
-      if (Math.abs(currentX) > threshold) {
-        const dir = currentX > 0 ? 1 : -1;
-
-        // 카드 날아가기
-        card.style.opacity = "0";
-        card.style.transform = `translateX(${dir * 120}%) rotate(${dir * 16}deg)`;
-
-        setTimeout(() => {
-          // 다음 카드
-          index = (index + 1) % items.length;
-
-          // intro는 1번 넘기면 다시 못 보게 하고 싶다면(요구사항):
-          // "넘어가면 못봄, 새로고침해야됨" = 현재 구현은 "루프"라서 다시 돌아올 수 있음.
-          // 아래 2줄을 켜면 intro는 다시 안나옴(루프 시 1번부터 시작).
-          if (index === 0) index = 1;
-
-          card.style.transition = "none";
-          card.style.opacity = "1";
-          card.style.transform = "translateX(0) rotate(0)";
-
-          renderCard();
-        }, 220);
-      } else {
-        // 원위치
-        card.style.opacity = "1";
-        card.style.transform = "translateX(0) rotate(0)";
-      }
-
-      currentX = 0;
-    });
-  </script>
+    setTimeout(()=>{
+      index=Math.min(index+1,items.length-1);
+      card.style.transition="none";
+      card.style.opacity=1;
+      card.style.transform="translateX(0)";
+      render();
+    },260);
+  }else{
+    card.style.transform="translateX(0)";
+  }
+  dx=0;
+});
+</script>
 </body>
 </html>
