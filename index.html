@@ -28,22 +28,25 @@ body{
 }
 
 .topbar{
-  height:52px;
-  padding:0 14px;
+  height:56px;
   display:flex;
-  justify-content:space-between;
+  justify-content:center;
   align-items:center;
-  background:rgba(255,255,255,.85);
+  background:rgba(255,255,255,.88);
   backdrop-filter:blur(10px);
-  border-bottom:1px solid rgba(0,0,0,.05);
+  border-bottom:1px solid rgba(0,0,0,.06);
+  position:relative;
 }
 
-.topbar span{
-  font-weight:800;
-  letter-spacing:1px;
+.topbar-title{
+  font-weight:900;
+  font-size:16px;
+  letter-spacing:0.5px;
 }
 
-.btn{
+.bgm-btn{
+  position:absolute;
+  right:14px;
   background:#111;
   color:#fff;
   border:0;
@@ -54,7 +57,7 @@ body{
 
 .book{
   position:absolute;
-  top:52px;
+  top:56px;
   bottom:0;
   left:0;
   right:0;
@@ -67,40 +70,38 @@ body{
   width:90%;
   height:82%;
   background:#fff;
-  border-radius:14px;
+  border-radius:16px;
   box-shadow:0 18px 40px rgba(0,0,0,.18);
   position:absolute;
   transform-style:preserve-3d;
   overflow:hidden;
 }
 
-.page img, .page video{
+.page img,
+.page video{
   width:100%;
   height:100%;
   object-fit:cover;
   backface-visibility:hidden;
 }
 
-.page.back{
-  transform: rotateY(180deg);
-}
-
 .share{
+  height:100%;
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
-  height:100%;
-  gap:16px;
+  gap:14px;
   font-weight:800;
 }
 
-.share button{
-  padding:12px 20px;
-  border-radius:12px;
-  border:0;
-  background:#111;
-  color:#fff;
+.share-title{
+  font-size:18px;
+}
+
+.share-note{
+  font-size:13px;
+  opacity:.65;
 }
 </style>
 </head>
@@ -109,8 +110,8 @@ body{
 <div class="stage">
 
   <div class="topbar">
-    <span>우당탕탕 포스트카드</span>
-    <button class="btn" id="bgmBtn">🔊</button>
+    <div class="topbar-title">우당탕탕 포스트카드</div>
+    <button class="bgm-btn" id="bgmBtn">🔊</button>
   </div>
 
   <div class="book">
@@ -126,101 +127,108 @@ body{
 const pages = [
   {type:"video", src:"media/intro.mp4"},
   ...Array.from({length:13},(_,i)=>({type:"img", src:`images/photo${i+1}.jpg`})),
-  {type:"share"}
+  {type:"qr"}
 ];
 
-let index=0;
-const page=document.getElementById("page");
-const flipSound=document.getElementById("flipSound");
+let index = 0;
+const page = document.getElementById("page");
+const flipSound = document.getElementById("flipSound");
 
-const bgm=document.getElementById("bgm");
-const bgmBtn=document.getElementById("bgmBtn");
-let bgmOn=false;
+const bgm = document.getElementById("bgm");
+const bgmBtn = document.getElementById("bgmBtn");
+let bgmOn = false;
 
-bgmBtn.onclick=async()=>{
-  if(!bgmOn){ await bgm.play(); bgmOn=true; bgmBtn.textContent="🔇"; }
-  else{ bgm.pause(); bgmOn=false; bgmBtn.textContent="🔊"; }
+bgmBtn.onclick = async () => {
+  if (!bgmOn) {
+    await bgm.play();
+    bgmOn = true;
+    bgmBtn.textContent = "🔇";
+  } else {
+    bgm.pause();
+    bgmOn = false;
+    bgmBtn.textContent = "🔊";
+  }
 };
 
 function render(){
-  page.innerHTML="";
-  const item=pages[index];
+  page.innerHTML = "";
+  const item = pages[index];
 
-  if(item.type==="video"){
-    const v=document.createElement("video");
-    Object.assign(v,{src:item.src,autoplay:true,muted:true,playsInline:true});
+  if (item.type === "video") {
+    const v = document.createElement("video");
+    Object.assign(v, {
+      src: item.src,
+      autoplay: true,
+      muted: true,
+      playsInline: true
+    });
     page.appendChild(v);
   }
-  else if(item.type==="img"){
-    const img=document.createElement("img");
-    img.src=item.src;
+
+  else if (item.type === "img") {
+    const img = document.createElement("img");
+    img.src = item.src;
     page.appendChild(img);
   }
-else{
-  const div = document.createElement("div");
-  div.className = "share";
-  div.innerHTML = `
-    <div>SCAN QR</div>
-    <img src="qr/qr.png" 
-         alt="QR Code"
-         style="
-           width:180px;
-           height:180px;
-           margin:12px 0;
-           border-radius:12px;
-           box-shadow:0 8px 20px rgba(0,0,0,.15);
-         ">
-    <div style="font-size:13px;opacity:.6;">
-      길게 눌러 저장
-    </div>
-  `;
-  page.appendChild(div);
-}
 
+  else {
+    const div = document.createElement("div");
+    div.className = "share";
+    div.innerHTML = `
+      <div class="share-title">SCAN QR</div>
+      <img src="qr/qr.png"
+           style="width:180px;height:180px;border-radius:14px;box-shadow:0 10px 24px rgba(0,0,0,.18)">
+      <div class="share-note">길게 눌러 저장</div>
+      <div class="share-note">해킹 파일 아님 주의</div>
+    `;
+    page.appendChild(div);
+  }
 }
 
 render();
 
-// 책장 넘김 로직
-let sx=0, dx=0, dragging=false;
+// page flip
+let startX = 0;
+let dx = 0;
+let dragging = false;
 
-page.addEventListener("touchstart",e=>{
-  dragging=true;
-  sx=e.touches[0].clientX;
-  page.style.transition="none";
+page.addEventListener("touchstart", e => {
+  dragging = true;
+  startX = e.touches[0].clientX;
+  page.style.transition = "none";
 });
 
-page.addEventListener("touchmove",e=>{
-  if(!dragging)return;
-  dx=e.touches[0].clientX-sx;
-  page.style.transform=`rotateY(${dx*.25}deg)`;
+page.addEventListener("touchmove", e => {
+  if (!dragging) return;
+  dx = e.touches[0].clientX - startX;
+  page.style.transform = `rotateY(${dx * 0.25}deg)`;
 });
 
-page.addEventListener("touchend",()=>{
-  dragging=false;
-  page.style.transition="transform .6s cubic-bezier(.2,.8,.2,1)";
+page.addEventListener("touchend", () => {
+  dragging = false;
+  page.style.transition = "transform .6s cubic-bezier(.2,.8,.2,1)";
 
-  if(Math.abs(dx)>60){
-    flipSound.currentTime=0;
+  if (Math.abs(dx) > 60) {
+    flipSound.currentTime = 0;
     flipSound.play();
 
-    if(dx<0){
-      index=(index+1)%pages.length;
-    }else{
-      index=(index-1+pages.length)%pages.length;
+    if (dx < 0) {
+      index = (index + 1) % pages.length;
+    } else {
+      index = (index - 1 + pages.length) % pages.length;
     }
 
-    page.style.transform=`rotateY(${dx<0?-180:180}deg)`;
+    page.style.transform = `rotateY(${dx < 0 ? -180 : 180}deg)`;
 
-    setTimeout(()=>{
-      page.style.transition="none";
-      page.style.transform="rotateY(0)";
+    setTimeout(() => {
+      page.style.transition = "none";
+      page.style.transform = "rotateY(0)";
       render();
-    },600);
-  }else{
-    page.style.transform="rotateY(0)";
+    }, 600);
+  } else {
+    page.style.transform = "rotateY(0)";
   }
-  dx=0;
+  dx = 0;
 });
 </script>
 </body>
