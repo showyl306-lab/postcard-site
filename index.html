@@ -8,9 +8,9 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 
-body {
+body{
   height:100vh;
-  background:#eaeaea;
+  background:#e6e6e6;
   display:flex;
   justify-content:center;
   align-items:center;
@@ -18,102 +18,89 @@ body {
   overflow:hidden;
 }
 
-.stage {
+.stage{
   width:100%;
   height:100%;
   max-width:420px;
   background:#f5f5f5;
-  display:flex;
-  flex-direction:column;
+  perspective:1200px;
   position:relative;
 }
 
-.topbar {
+.topbar{
   height:52px;
   padding:0 14px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  background:rgba(255,255,255,0.85);
-  backdrop-filter: blur(10px);
-  border-bottom:1px solid rgba(0,0,0,0.05);
+  background:rgba(255,255,255,.85);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(0,0,0,.05);
 }
 
-.topbar span {
+.topbar span{
   font-weight:800;
-  font-size:14px;
   letter-spacing:1px;
 }
 
-.btn {
+.btn{
   background:#111;
   color:#fff;
   border:0;
   border-radius:999px;
   padding:8px 12px;
   font-weight:700;
-  cursor:pointer;
 }
 
-.content {
-  flex:1;
+.book{
+  position:absolute;
+  top:52px;
+  bottom:0;
+  left:0;
+  right:0;
   display:flex;
   justify-content:center;
   align-items:center;
-  position:relative;
 }
 
-.stack {
-  position:absolute;
-  width:90%;
-  height:82%;
-  border-radius:16px;
-  background:#fff;
-  box-shadow:0 8px 20px rgba(0,0,0,.1);
-  transform:translateY(14px) scale(.97);
-}
-
-.stack.back {
-  transform:translateY(26px) scale(.94);
-  opacity:.6;
-}
-
-.card {
+.page{
   width:90%;
   height:82%;
   background:#fff;
-  border-radius:16px;
+  border-radius:14px;
   box-shadow:0 18px 40px rgba(0,0,0,.18);
-  overflow:hidden;
   position:absolute;
-  touch-action:pan-y;
-  transition:transform .28s cubic-bezier(.2,.8,.2,1), opacity .28s;
+  transform-style:preserve-3d;
+  overflow:hidden;
 }
 
-.card img, .card video {
+.page img, .page video{
   width:100%;
   height:100%;
   object-fit:cover;
-  pointer-events:none;
+  backface-visibility:hidden;
 }
 
-.end {
+.page.back{
+  transform: rotateY(180deg);
+}
+
+.share{
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
-  gap:16px;
   height:100%;
-  font-weight:700;
+  gap:16px;
+  font-weight:800;
 }
 
-.end button {
+.share button{
   padding:12px 20px;
   border-radius:12px;
   border:0;
   background:#111;
   color:#fff;
-  font-weight:800;
 }
 </style>
 </head>
@@ -126,26 +113,28 @@ body {
     <button class="btn" id="bgmBtn">🔊</button>
   </div>
 
-  <div class="content">
-    <div class="stack back"></div>
-    <div class="stack"></div>
-    <div class="card" id="card"></div>
+  <div class="book">
+    <div class="page" id="page"></div>
   </div>
+
 </div>
 
 <audio id="bgm" src="audio/bgm.mp3" loop></audio>
+<audio id="flipSound" src="audio/page-flip.mp3" preload="auto"></audio>
 
 <script>
-const items = [
-  { type:"video", src:"media/intro.mp4" },
-  ...Array.from({length:13},(_,i)=>({ type:"image", src:`images/photo${i+1}.jpg` })),
-  { type:"end" }
+const pages = [
+  {type:"video", src:"media/intro.mp4"},
+  ...Array.from({length:13},(_,i)=>({type:"img", src:`images/photo${i+1}.jpg`})),
+  {type:"share"}
 ];
 
-let index = 0;
-const card = document.getElementById("card");
-const bgm = document.getElementById("bgm");
-const bgmBtn = document.getElementById("bgmBtn");
+let index=0;
+const page=document.getElementById("page");
+const flipSound=document.getElementById("flipSound");
+
+const bgm=document.getElementById("bgm");
+const bgmBtn=document.getElementById("bgmBtn");
 let bgmOn=false;
 
 bgmBtn.onclick=async()=>{
@@ -154,65 +143,71 @@ bgmBtn.onclick=async()=>{
 };
 
 function render(){
-  card.innerHTML="";
-  const item=items[index];
+  page.innerHTML="";
+  const item=pages[index];
 
   if(item.type==="video"){
     const v=document.createElement("video");
     Object.assign(v,{src:item.src,autoplay:true,muted:true,playsInline:true});
-    card.appendChild(v);
+    page.appendChild(v);
   }
-  else if(item.type==="image"){
+  else if(item.type==="img"){
     const img=document.createElement("img");
     img.src=item.src;
-    card.appendChild(img);
+    page.appendChild(img);
   }
   else{
-    const end=document.createElement("div");
-    end.className="end";
-    end.innerHTML=`
-      <div>끝</div>
-      <button onclick="location.reload()">처음으로</button>
+    const div=document.createElement("div");
+    div.className="share";
+    div.innerHTML=`
+      <div>공유하기</div>
+      <button onclick="navigator.clipboard.writeText(location.href)">링크 복사</button>
+      <button onclick="alert('QR은 이미 인쇄된 QR을 사용하세요')">QR 저장</button>
     `;
-    card.appendChild(end);
+    page.appendChild(div);
   }
 }
 
 render();
 
+// 책장 넘김 로직
 let sx=0, dx=0, dragging=false;
-const threshold=70;
 
-card.addEventListener("touchstart",e=>{
+page.addEventListener("touchstart",e=>{
   dragging=true;
   sx=e.touches[0].clientX;
-  card.style.transition="none";
+  page.style.transition="none";
 });
 
-card.addEventListener("touchmove",e=>{
+page.addEventListener("touchmove",e=>{
   if(!dragging)return;
   dx=e.touches[0].clientX-sx;
-  card.style.transform=`translateX(${dx}px) rotate(${dx*.04}deg)`;
+  page.style.transform=`rotateY(${dx*.25}deg)`;
 });
 
-card.addEventListener("touchend",()=>{
+page.addEventListener("touchend",()=>{
   dragging=false;
-  card.style.transition="transform .28s, opacity .28s";
+  page.style.transition="transform .6s cubic-bezier(.2,.8,.2,1)";
 
-  if(Math.abs(dx)>threshold){
-    const dir=dx>0?1:-1;
-    card.style.transform=`translateX(${dir*140}%) rotate(${dir*18}deg)`;
-    card.style.opacity=0;
+  if(Math.abs(dx)>60){
+    flipSound.currentTime=0;
+    flipSound.play();
+
+    if(dx<0){
+      index=(index+1)%pages.length;
+    }else{
+      index=(index-1+pages.length)%pages.length;
+    }
+
+    page.style.transform=`rotateY(${dx<0?-180:180}deg)`;
 
     setTimeout(()=>{
-      index=Math.min(index+1,items.length-1);
-      card.style.transition="none";
-      card.style.opacity=1;
-      card.style.transform="translateX(0)";
+      page.style.transition="none";
+      page.style.transform="rotateY(0)";
       render();
-    },260);
+    },600);
   }else{
-    card.style.transform="translateX(0)";
+    page.style.transform="rotateY(0)";
   }
   dx=0;
 });
