@@ -156,16 +156,27 @@ function render(){
     img.src=item.src;
     page.appendChild(img);
   }
-  else{
-    const div=document.createElement("div");
-    div.className="share";
-    div.innerHTML=`
-      <div>공유하기</div>
-      <button onclick="navigator.clipboard.writeText(location.href)">링크 복사</button>
-      <button onclick="alert('QR은 이미 인쇄된 QR을 사용하세요')">QR 저장</button>
-    `;
-    page.appendChild(div);
-  }
+else{
+  const div = document.createElement("div");
+  div.className = "share";
+  div.innerHTML = `
+    <div>SCAN QR</div>
+    <img src="qr/qr.png" 
+         alt="QR Code"
+         style="
+           width:180px;
+           height:180px;
+           margin:12px 0;
+           border-radius:12px;
+           box-shadow:0 8px 20px rgba(0,0,0,.15);
+         ">
+    <div style="font-size:13px;opacity:.6;">
+      길게 눌러 저장
+    </div>
+  `;
+  page.appendChild(div);
+}
+
 }
 
 render();
